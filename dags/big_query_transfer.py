@@ -1,13 +1,14 @@
 from airflow import DAG
 from airflow.contrib.operators.bigquery_operator import BigQueryOperator
 from airflow.contrib.operators.bigquery_get_data import BigQueryGetDataOperator
+from airflow.contrib.operators.bigquery_to_gcs import BigQueryToCloudStorageOperator
 from airflow.contrib.hooks.bigquery_hook import BigQueryHook
-from airflow.operators.python_operator import PythonOperator
+from airflow.operators.python_operator import PythonOperator, BranchPythonOperator
 
 import json
 from datetime import datetime, timedelta
 
-from py.load_bigquery import bq_pull
+from py.extract_and_load import load_table, create_table, branch_task
 
 
 default_args = {
@@ -22,24 +23,43 @@ default_args = {
 }
 
 # create dag and schedule a load interval every day at midnight (7am UTC)
-with DAG('bigquery', default_args=default_args, 
-         schedule_interval=timedelta(days=1)) as dag:
+dag = DAG('bigquery', default_args=default_args, 
+          schedule_interval=timedelta(days=1))
 
-    # first task is to extract from GCP
-    task_bq_pull = PythonOperator(
-        task_id = 'pull_bigquery_dataset',
-        provide_context=True,
-        python_callable = bq_pull,
-        dag=dag
-    )
+# extracts bq to a gcs bucket as csv
+task_bq_to_gcs = BigQueryToCloudStorageOperator(
+    source_project_dataset_table='bigquery-public-data.austin_311.311_service_requests',
+    destination_cloud_storage_uris=['gs://airy-media-254122.appspot.com/bq_bucket/austin_311_service_requests.csv'],
+    bigquery_conn_id='my_gcp_connection',
+    task_id='bq_to_gcs',
+    dag=dag
+)
 
-    # new task to collect
+# branch to either load or create table
+branch_task = BranchPythonOperator(
+    task_id='branch_task',
+    provide_context=True,
+    python_callable=branch_task,
+    dag=dag
+)
 
-    task_one = BigQueryGetDataOperator(
-        task_id='bq_get_data',
-        dataset_id='bigquery-public-data',
-        table_id='austin_311.311_service_requests',
-        max_results='5',
-        bigquery_conn_id='my_gcp_connection'
-    )
+# loads postgres table from csv
+task_gcs_to_postgres = PythonOperator(
+    task_id='load_table_task',
+    python_callable=load_table,
+    provide_context=True,
+    dag=dag
+)
 
+# creates table
+task_create = PythonOperator(
+    task_id='create_table_task',
+    python_callable=create_table,
+    provide_context=True,
+    dag=dag
+)
+
+
+task_bq_to_gcs >> branch_task
+branch_task >> [task_create, task_gcs_to_postgres]
+task_create >> task_gcs_to_postgres
