@@ -4,6 +4,6 @@ CREATE TABLE austin_service_reports (
     owning_department     varchar(255),
     source                varchar(255),
     status                varchar(255),
-    created_date          date,
-    close_date            date
+    created_date          timestamp,
+    close_date            timestamp
 );

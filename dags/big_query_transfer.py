@@ -8,12 +8,12 @@ from airflow.operators.python_operator import PythonOperator, BranchPythonOperat
 import json
 from datetime import datetime, timedelta
 
-from py.extract_and_load import load_table, create_table, branch_task
+from py.extract_and_load import load_table, create_table, branch_task, bq_hook
 
 
 default_args = {
     'owner': 'airflow',
-    'depends_on_past': True,
+    'ignore_first_depends_on_past': True,
     'start_date': datetime(2014, 1, 1),
     'email': ['airflow@example.com'],
     'email_on_failure': False,
@@ -26,6 +26,7 @@ default_args = {
 dag = DAG('bigquery', default_args=default_args, 
           schedule_interval=timedelta(days=1))
 
+'''
 # extracts bq to a gcs bucket as csv
 task_bq_to_gcs = BigQueryToCloudStorageOperator(
     source_project_dataset_table='bigquery-public-data.austin_311.311_service_requests',
@@ -34,6 +35,7 @@ task_bq_to_gcs = BigQueryToCloudStorageOperator(
     task_id='bq_to_gcs',
     dag=dag
 )
+'''
 
 # branch to either load or create table
 branch_task = BranchPythonOperator(
@@ -55,6 +57,14 @@ task_gcs_to_postgres = PythonOperator(
 task_create = PythonOperator(
     task_id='create_table_task',
     python_callable=create_table,
+    provide_context=True,
+    dag=dag
+)
+
+# extracts bq to a gcs bucket as csv
+task_bq_to_gcs = PythonOperator(
+    task_id='task_bq_to_gcs',
+    python_callable=bq_hook,
     provide_context=True,
     dag=dag
 )
