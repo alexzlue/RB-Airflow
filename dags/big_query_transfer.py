@@ -12,7 +12,6 @@ from py.extract_and_load import load_table, create_table, branch_task, bq_hook
 
 default_args = {
     'owner': 'airflow',
-    # 'depends_on_past': True,
     'ignore_first_depends_on_past': True,
     'start_date': datetime(2014, 1, 1),
     'email': ['airflow@example.com'],
@@ -69,11 +68,14 @@ task_bq_to_gcs = PythonOperator(
     dag=dag
 )
 
+# dummy op to branch if table creation is uneeded
 task_no_create = DummyOperator(
     task_id='task_no_create',
     dag=dag
 )
 
+# trigger to move from branch to load after creating
+# (or not creating) a table
 task_one_success = DummyOperator(
     task_id='one_success',
     trigger_rule=TriggerRule.ONE_SUCCESS,
