@@ -1,9 +1,8 @@
 from airflow import DAG
-from airflow.contrib.operators.bigquery_operator import BigQueryOperator
-from airflow.contrib.operators.bigquery_get_data import BigQueryGetDataOperator
 from airflow.contrib.operators.bigquery_to_gcs import BigQueryToCloudStorageOperator
-from airflow.contrib.hooks.bigquery_hook import BigQueryHook
 from airflow.operators.python_operator import PythonOperator, BranchPythonOperator
+from airflow.operators.dummy_operator import DummyOperator
+from airflow.utils.trigger_rule import TriggerRule
 
 import json
 from datetime import datetime, timedelta
@@ -13,6 +12,7 @@ from py.extract_and_load import load_table, create_table, branch_task, bq_hook
 
 default_args = {
     'owner': 'airflow',
+    # 'depends_on_past': True,
     'ignore_first_depends_on_past': True,
     'start_date': datetime(2014, 1, 1),
     'email': ['airflow@example.com'],
@@ -69,7 +69,19 @@ task_bq_to_gcs = PythonOperator(
     dag=dag
 )
 
+task_no_create = DummyOperator(
+    task_id='task_no_create',
+    dag=dag
+)
+
+task_one_success = DummyOperator(
+    task_id='one_success',
+    trigger_rule=TriggerRule.ONE_SUCCESS,
+    dag=dag
+)
+
 
 task_bq_to_gcs >> branch_task
-branch_task >> [task_create, task_gcs_to_postgres]
-task_create >> task_gcs_to_postgres
+branch_task >> [task_create, task_no_create]
+task_one_success << [task_no_create, task_create]
+task_one_success >> task_gcs_to_postgres

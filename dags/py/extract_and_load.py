@@ -48,7 +48,7 @@ def branch_task(**kwargs):
     cursor = conn.cursor()
     try:
         cursor.execute('SELECT 1 FROM austin_service_reports;')
-        return "load_table_task"
+        return "task_no_create"
     except:
         return 'create_table_task'
 
