@@ -13,7 +13,7 @@ from py.extract_and_load import load_table, create_table, branch_task, bq_hook
 default_args = {
     'owner': 'airflow',
     'ignore_first_depends_on_past': True,
-    'start_date': datetime(2014, 1, 1),
+    'start_date': datetime(2014, 1, 2),
     'email': ['airflow@example.com'],
     'email_on_failure': False,
     'email_on_retry': False,
@@ -23,18 +23,8 @@ default_args = {
 
 # create dag and schedule a load interval every day at midnight (7am UTC)
 dag = DAG('bigquery', default_args=default_args, 
-          schedule_interval=timedelta(days=1))
-
-'''
-# extracts bq to a gcs bucket as csv
-task_bq_to_gcs = BigQueryToCloudStorageOperator(
-    source_project_dataset_table='bigquery-public-data.austin_311.311_service_requests',
-    destination_cloud_storage_uris=['gs://airy-media-254122.appspot.com/bq_bucket/austin_311_service_requests.csv'],
-    bigquery_conn_id='my_gcp_connection',
-    task_id='bq_to_gcs',
-    dag=dag
-)
-'''
+          schedule_interval=timedelta(days=1),
+          max_active_runs=1)
 
 # branch to either load or create table
 branch_task = BranchPythonOperator(

@@ -28,12 +28,13 @@ def load_table(**kwargs):
     blob = bucket.get_blob('bq_bucket/date_range.csv')
     csv = blob.download_as_string().decode('utf-8').split('\n')
     rows = [row.split(',') for row in csv]
-    insert = "INSERT INTO austin_service_reports VALUES ('{0}','{1}','{2}','{3}','{4}','{5}','{6}');"
+    insert = "INSERT INTO austin_service_reports VALUES ('{0}','{1}','{2}','{3}','{4}','{5}',{6});"
     for row in rows:
+        row[6] = "NULL" if row[6] == 'None' else ("'"+str(datetime.utcfromtimestamp(float(row[6])))+"'")
         query = insert.format(
             row[0],row[1],row[2],row[3],row[4],
-            str(datetime.fromtimestamp(float(row[5]))),
-            str(datetime.fromtimestamp(float(row[6])))
+            str(datetime.utcfromtimestamp(float(row[5]))),
+            row[6]
         )
         cursor.execute(query)
         conn.commit()
