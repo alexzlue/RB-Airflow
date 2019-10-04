@@ -1,4 +1,4 @@
-CREATE TABLE austin_service_reports (
+CREATE TABLE IF NOT EXISTS austin_service_reports (
     unique_key            char(12),
     complaint_description varchar(255),
     owning_department     varchar(255),

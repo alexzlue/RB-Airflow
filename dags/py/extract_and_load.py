@@ -8,21 +8,17 @@ import os
 
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = 'keys/airy-media-254122-973505938453.json'
 
-# creates postgres table if none
-def create_table(**kwargs):
-    conn = PostgresHook(postgres_conn_id='my_local_db').get_conn()
-    cursor = conn.cursor()
-    with open('sql/create_postgres_table.sql', 'r') as f:
-        cursor.execute(f.read())
-
-    conn.commit()
-    conn.close()
-    cursor.close()
-
-# loads postgres table
+# loads postgres table, creates a table if it does not exist
 def load_table(**kwargs):
     conn = PostgresHook(postgres_conn_id='my_local_db').get_conn()
     cursor = conn.cursor()
+
+    # create table if it does not exist
+    with open('sql/create_postgres_table.sql', 'r') as f:
+        cursor.execute(f.read())
+    conn.commit()
+
+    # collect data from gcs
     client = storage.Client()
     bucket = client.get_bucket('airy-media-254122.appspot.com')
     blob = bucket.get_blob('bq_bucket/date_range.csv')
@@ -37,21 +33,10 @@ def load_table(**kwargs):
             row[6]
         )
         cursor.execute(query)
-        conn.commit()
     
     conn.commit()
-    conn.close()
     cursor.close()
-
-# decides to either load or create table
-def branch_task(**kwargs):
-    conn = PostgresHook(postgres_conn_id='my_local_db').get_conn()
-    cursor = conn.cursor()
-    try:
-        cursor.execute('SELECT 1 FROM austin_service_reports;')
-        return "task_no_create"
-    except:
-        return 'create_table_task'
+    conn.close()
 
 # collects values based off date range from bigquery and pushes to gcs as csv
 def bq_hook(**kwargs):
