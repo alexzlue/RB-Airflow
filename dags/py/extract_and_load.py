@@ -13,8 +13,7 @@ CRED = gcs_client.Credentials(os.environ["GOOGLE_APPLICATION_CREDENTIALS"])
 PROJECT = gcs_client.Project('airy-media-254122', CRED)
 BUCKET = PROJECT.list()[0]
 
-# loads postgres table, creates a table if it does not exist
-def load_table(**kwargs):
+def create_table(**kwargs):
     conn = PostgresHook(postgres_conn_id='my_local_db').get_conn()
     cursor = conn.cursor()
 
@@ -22,6 +21,14 @@ def load_table(**kwargs):
     with open('sql/create_postgres_table.sql', 'r') as f:
         cursor.execute(f.read())
     conn.commit()
+
+    cursor.close()
+    conn.close()
+
+# loads postgres table, creates a table if it does not exist
+def load_table(**kwargs):
+    conn = PostgresHook(postgres_conn_id='my_local_db').get_conn()
+    cursor = conn.cursor()
 
     # load our sql insert command
     with open('sql/insert_value.sql') as sql:
@@ -55,13 +62,20 @@ def bq_to_gcs(**kwargs):
     # get the last current date from Postgres
     conn = PostgresHook(postgres_conn_id='my_local_db').get_conn()
     cursor = conn.cursor()
-    cursor.execute("select distinct cast(created_date as date) from austin_service_reports order by created_date DESC;")
-    recent_ds = cursor.fetchone()[0]+timedelta(days=1)
 
-    if recent_ds < previous:
-        prev_ds = datetime.strftime(recent_ds, '%Y-%m-%d')
+    with open('sql/select_recent_date.sql', 'r') as f:
+        select = f.read()
+    cursor.execute(select)
+    
+    recent_ds = cursor.fetchone()[0]
+    if recent_ds is not None:
+        recent_ds+timedelta(days=1)
+        if recent_ds < previous:
+            prev_ds = datetime.strftime(recent_ds, '%Y-%m-%d')
+        else:
+            prev_ds = kwargs['prev_ds']
     else:
-        prev_ds = kwargs['prev_ds']
+        prev_ds = datetime.strftime(kwargs['start_date']-timedelta(days=1), '%Y-%m-%d')
     
     cursor.close()
     conn.close()
@@ -76,7 +90,6 @@ def bq_to_gcs(**kwargs):
     with open('sql/query_bq_dataset.sql', 'r') as f:
         query = f.read()
         query = query.format(prev_ds,ds)
-        print(query)
 
     cursor.execute(query)
 
@@ -88,29 +101,5 @@ def bq_to_gcs(**kwargs):
                 break
             f.write(','.join([str(val) for val in result]) + '\n')
 
-    cursor.close()
-    conn.close()
-
-def gcs_client_test(**kwargs):
-    print(kwargs)
-    prev_ds = datetime.strptime(kwargs['prev_ds'], '%Y-%m-%d').date()
-    ds = kwargs['ds']
-    conn = PostgresHook(postgres_conn_id='my_local_db').get_conn()
-    cursor = conn.cursor()
-    cursor.execute("select distinct cast(created_date as date) from austin_service_reports order by created_date DESC;")
-    recent_ds = cursor.fetchone()[0]+timedelta(days=1)
-    print(prev_ds)
-    print(recent_ds)
-    if recent_ds < prev_ds:
-        prev_ds = datetime.strftime(recent_ds, '%Y-%m-%d')
-    else:
-        prev_ds = kwargs['prev_ds']
-    # print(res)
-
-    with open('sql/query_bq_dataset.sql', 'r') as f:
-        query = f.read()
-        query = query.format(prev_ds,ds)
-        print(query)
-    
     cursor.close()
     conn.close()
