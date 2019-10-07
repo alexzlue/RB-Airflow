@@ -69,7 +69,7 @@ def bq_to_gcs(**kwargs):
     
     recent_ds = cursor.fetchone()[0]
     if recent_ds is not None:
-        recent_ds+timedelta(days=1)
+        recent_ds+=timedelta(days=1)
         if recent_ds < previous:
             prev_ds = datetime.strftime(recent_ds, '%Y-%m-%d')
         else:
