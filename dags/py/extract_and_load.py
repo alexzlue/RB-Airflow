@@ -2,7 +2,7 @@ from airflow.contrib.hooks.bigquery_hook import BigQueryHook
 from airflow.hooks.postgres_hook import PostgresHook
 
 from google.cloud import storage
-from datetime import datetime
+from datetime import datetime, timedelta
 from io import BytesIO
 import gcs_client
 import os
@@ -49,9 +49,24 @@ def load_table(**kwargs):
 
 # collects values based off date range from bigquery and pushes to gcs as csv
 def bq_to_gcs(**kwargs):
-    prev_ds = kwargs['prev_ds']
     ds = kwargs['ds']
-    # print(kwargs)
+    previous = datetime.strptime(kwargs['prev_ds'], '%Y-%m-%d').date()
+
+    # get the last current date from Postgres
+    conn = PostgresHook(postgres_conn_id='my_local_db').get_conn()
+    cursor = conn.cursor()
+    cursor.execute("select distinct cast(created_date as date) from austin_service_reports order by created_date DESC;")
+    recent_ds = cursor.fetchone()[0]+timedelta(days=1)
+
+    if recent_ds < previous:
+        prev_ds = datetime.strftime(recent_ds, '%Y-%m-%d')
+    else:
+        prev_ds = kwargs['prev_ds']
+    
+    cursor.close()
+    conn.close()
+
+    # open connection to BigQuery
     hook = BigQueryHook(
         bigquery_conn_id='my_gcp_connection',
         use_legacy_sql=False
@@ -65,7 +80,7 @@ def bq_to_gcs(**kwargs):
 
     cursor.execute(query)
 
-    #write to bucket
+    # write to gcs bucket
     with BUCKET.open('bq_bucket/bq_dataset.csv', 'w') as f:
         while True:
             result = cursor.fetchone()
@@ -77,10 +92,25 @@ def bq_to_gcs(**kwargs):
     conn.close()
 
 def gcs_client_test(**kwargs):
+    print(kwargs)
+    prev_ds = datetime.strptime(kwargs['prev_ds'], '%Y-%m-%d').date()
+    ds = kwargs['ds']
     conn = PostgresHook(postgres_conn_id='my_local_db').get_conn()
     cursor = conn.cursor()
-    cursor.execute("select * from austin_service_reports where unique_key='14-00000421';")
-    res = cursor.fetchone()
-    print(res)
-    res = cursor.fetchone()
-    print(res)
+    cursor.execute("select distinct cast(created_date as date) from austin_service_reports order by created_date DESC;")
+    recent_ds = cursor.fetchone()[0]+timedelta(days=1)
+    print(prev_ds)
+    print(recent_ds)
+    if recent_ds < prev_ds:
+        prev_ds = datetime.strftime(recent_ds, '%Y-%m-%d')
+    else:
+        prev_ds = kwargs['prev_ds']
+    # print(res)
+
+    with open('sql/query_bq_dataset.sql', 'r') as f:
+        query = f.read()
+        query = query.format(prev_ds,ds)
+        print(query)
+    
+    cursor.close()
+    conn.close()
