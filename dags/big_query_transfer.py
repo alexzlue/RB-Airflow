@@ -7,7 +7,7 @@ from airflow.utils.trigger_rule import TriggerRule
 import json
 from datetime import datetime, timedelta
 
-from py.extract_and_load import load_table, bq_hook
+from py.extract_and_load import load_table, bq_to_gcs, gcs_client_test
 
 
 default_args = {
@@ -38,8 +38,16 @@ task_gcs_to_postgres = PythonOperator(
 # extracts bq to a gcs bucket as csv
 task_bq_to_gcs = PythonOperator(
     task_id='task_bq_to_gcs',
-    python_callable=bq_hook,
+    python_callable=bq_to_gcs,
     provide_context=True,
+    dag=dag
+)
+
+# gcs_client package test
+task_gcs = PythonOperator(
+    task_id='gcs_test',
+    provide_context=True,
+    python_callable=gcs_client_test,
     dag=dag
 )
 
