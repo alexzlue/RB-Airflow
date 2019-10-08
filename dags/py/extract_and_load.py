@@ -13,18 +13,6 @@ CRED = gcs_client.Credentials(os.environ["GOOGLE_APPLICATION_CREDENTIALS"])
 PROJECT = gcs_client.Project('airy-media-254122', CRED)
 BUCKET = PROJECT.list()[0]
 
-def create_table(**kwargs):
-    conn = PostgresHook(postgres_conn_id='my_local_db').get_conn()
-    cursor = conn.cursor()
-
-    # create table in postgres if it does not exist
-    with open('sql/create_postgres_table.sql', 'r') as f:
-        cursor.execute(f.read())
-    conn.commit()
-
-    cursor.close()
-    conn.close()
-
 # loads postgres table, creates a table if it does not exist
 def load_table(**kwargs):
     conn = PostgresHook(postgres_conn_id='my_local_db').get_conn()
