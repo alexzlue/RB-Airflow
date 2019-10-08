@@ -12,6 +12,7 @@ os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = 'keys/airy-media-254122-973505938
 CRED = gcs_client.Credentials(os.environ["GOOGLE_APPLICATION_CREDENTIALS"])
 PROJECT = gcs_client.Project('airy-media-254122', CRED)
 BUCKET = PROJECT.list()[0]
+SQL_PATH = 'dags/extract_load_pipeline/sql/'
 
 # loads postgres table, creates a table if it does not exist
 def load_table(**kwargs):
@@ -19,7 +20,7 @@ def load_table(**kwargs):
     cursor = conn.cursor()
 
     # load our sql insert command
-    with open('sql/insert_value.sql') as sql:
+    with open(SQL_PATH + 'insert_value.sql') as sql:
         insert = sql.read()
 
     client = storage.Client()
@@ -51,7 +52,7 @@ def bq_to_gcs(**kwargs):
     conn = PostgresHook(postgres_conn_id='my_local_db').get_conn()
     cursor = conn.cursor()
 
-    with open('sql/select_recent_date.sql', 'r') as f:
+    with open(SQL_PATH + 'select_recent_date.sql', 'r') as f:
         select = f.read()
     cursor.execute(select)
     
@@ -75,7 +76,7 @@ def bq_to_gcs(**kwargs):
     )
     conn = hook.get_conn()
     cursor = conn.cursor()
-    with open('sql/query_bq_dataset.sql', 'r') as f:
+    with open(SQL_PATH + 'query_bq_dataset.sql', 'r') as f:
         query = f.read()
         query = query.format(prev_ds,ds)
 
@@ -91,3 +92,9 @@ def bq_to_gcs(**kwargs):
 
     cursor.close()
     conn.close()
+
+def test(**kwargs):
+    print(kwargs)
+    with BUCKET.open('bq_bucket/bq_test.csv', 'w') as f:
+        f.write(str(kwargs)+"\n\n")
+        f.write(kwargs['start']+" "+kwargs['end'])

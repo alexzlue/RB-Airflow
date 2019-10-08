@@ -4,7 +4,7 @@ from airflow.operators.postgres_operator import PostgresOperator
 
 from datetime import datetime, timedelta
 
-from py.extract_and_load import load_table, bq_to_gcs, create_table
+from extract_load_pipeline.py.extract_and_load import load_table, bq_to_gcs
 
 
 default_args = {
@@ -29,7 +29,7 @@ dag = DAG(
 # task to create table if it does not exist
 task_create_table = PostgresOperator(
     task_id='task_create_table',
-    sql='./sql/create_postgres_table.sql',
+    sql='./extract_load_pipeline/sql/create_postgres_table.sql',
     postgres_conn_id='my_local_db',
     dag=dag
 )
