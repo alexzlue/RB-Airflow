@@ -20,7 +20,7 @@ default_args = {
 
 # create dag and schedule a load interval every day at midnight (7am UTC)
 dag = DAG(
-    'bigquery', 
+    'extract_and_load', 
     default_args=default_args,
     schedule_interval=timedelta(days=1),
     max_active_runs=1
