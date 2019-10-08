@@ -92,9 +92,3 @@ def bq_to_gcs(**kwargs):
 
     cursor.close()
     conn.close()
-
-def test(**kwargs):
-    print(kwargs)
-    with BUCKET.open('bq_bucket/bq_test.csv', 'w') as f:
-        f.write(str(kwargs)+"\n\n")
-        f.write(kwargs['start']+" "+kwargs['end'])
