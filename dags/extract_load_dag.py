@@ -20,7 +20,8 @@ default_args = {
 
 # create dag and schedule a load interval every day at midnight (7am UTC)
 dag = DAG(
-    'extract_and_load', 
+    'extract_and_load',
+    catchup=False,
     default_args=default_args,
     schedule_interval=timedelta(days=1),
     max_active_runs=1
@@ -51,6 +52,5 @@ task_gcs_to_postgres = PythonOperator(
     dag=dag
 )
 
-task_create_table >> \
-    task_bq_to_gcs >> \
-    task_gcs_to_postgres
+task_create_table.set_downstream(task_bq_to_gcs)
+task_bq_to_gcs.set_downstream(task_gcs_to_postgres)
