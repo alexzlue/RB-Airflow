@@ -3,6 +3,7 @@ from airflow.hooks.postgres_hook import PostgresHook
 
 from google.cloud import storage
 from datetime import datetime, timedelta
+from tempfile import NamedTemporaryFile
 from io import BytesIO
 import gcs_client
 import os
@@ -19,26 +20,18 @@ def load_table(**kwargs):
     conn = PostgresHook(postgres_conn_id='my_local_db').get_conn()
     cursor = conn.cursor()
 
-    # load our sql insert command
-    with open(SQL_PATH + 'insert_value.sql') as sql:
-        insert = sql.read()
-
     client = storage.Client()
     bucket = client.get_bucket('airy-media-254122.appspot.com')
     blob = bucket.get_blob('bq_bucket/bq_dataset.csv')
-    csv = blob.download_as_string().decode('utf-8').split('\n')
-    rows = [row.split(',') for row in csv]
-    for row in rows:
-        if len(row) == 1:
-            break
-        row[6] = "NULL" if row[6] == 'None' else ("'"+str(datetime.utcfromtimestamp(float(row[6])))+"'")
-        query = insert.format(
-            row[0],row[1],row[2],row[3],row[4],
-            str(datetime.utcfromtimestamp(float(row[5]))),
-            row[6]
-        )
-        cursor.execute(query)
 
+    # create a temporary file and store csv into that to read
+    tempf = NamedTemporaryFile()
+    blob.download_to_filename(tempf.name)
+
+    query = "COPY airflow.austin_service_reports FROM '"+tempf.name+"' WITH (FORMAT csv)"
+    cursor.execute(query)
+
+    tempf.close()
     conn.commit()
     cursor.close()
     conn.close()
@@ -86,6 +79,12 @@ def bq_to_gcs(**kwargs):
             result = cursor.fetchone()
             if result is None:
                 break
+            
+            if result[6] is None:
+                result[6]= ''
+            else:
+                result[6] = datetime.utcfromtimestamp(result[6])
+            result[5] = datetime.utcfromtimestamp(result[5])
             f.write(','.join([str(val) for val in result]) + '\n')
 
     cursor.close()
