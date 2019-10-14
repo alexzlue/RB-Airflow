@@ -80,12 +80,12 @@ def bq_to_gcs(**kwargs):
             if result is None:
                 break
             
-            if result[7] is None:
-                result[7]= ''
+            if result[8] is None:
+                result[8]= ''
             else:
-                result[7] = datetime.utcfromtimestamp(result[7])
+                result[8] = datetime.utcfromtimestamp(result[8])
+            result[7] = datetime.utcfromtimestamp(result[7])
             result[6] = datetime.utcfromtimestamp(result[6])
-            result[5] = datetime.utcfromtimestamp(result[5])
             f.write(','.join([str(val) for val in result]) + '\n')
 
     cursor.close()

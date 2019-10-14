@@ -1,5 +1,6 @@
 #standardSQL
 SELECT unique_key,
+    complaint_type,
     complaint_description,
     owning_department,
     source,
