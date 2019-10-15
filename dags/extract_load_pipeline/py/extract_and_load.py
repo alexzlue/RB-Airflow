@@ -22,13 +22,13 @@ def load_table(**kwargs):
 
     client = storage.Client()
     bucket = client.get_bucket('airy-media-254122.appspot.com')
-    blob = bucket.get_blob('bq_bucket/bq_dataset.csv')
+    blob = bucket.get_blob('bq_bucket/bq_dataset.txt')
 
     # create a temporary file and store csv into that to read
     tempf = NamedTemporaryFile()
     blob.download_to_filename(tempf.name)
 
-    query = "COPY airflow.austin_service_reports FROM '"+tempf.name+"' WITH (FORMAT csv)"
+    query = "COPY airflow.austin_service_reports FROM '"+tempf.name+"' DELIMITER '|' NULL ''"
     cursor.execute(query)
 
     tempf.close()
@@ -74,19 +74,21 @@ def bq_to_gcs(**kwargs):
     cursor.execute(query)
 
     # write to gcs bucket
-    with BUCKET.open('bq_bucket/bq_dataset.csv', 'w') as f:
+    with BUCKET.open('bq_bucket/bq_dataset.txt', 'w') as f:
         while True:
             result = cursor.fetchone()
             if result is None:
                 break
             
             if result[8] is None:
-                result[8]= ''
+                result[8] = ''
             else:
                 result[8] = datetime.utcfromtimestamp(result[8])
+            if result[9] is None:
+                result[9] = ''
             result[7] = datetime.utcfromtimestamp(result[7])
             result[6] = datetime.utcfromtimestamp(result[6])
-            f.write(','.join([str(val) for val in result]) + '\n')
+            f.write('|'.join([str(val) for val in result]) + '\n')
 
     cursor.close()
     conn.close()

@@ -7,6 +7,7 @@ SELECT unique_key,
     status,
     created_date,
     last_update_date,
-    close_date
+    close_date,
+    city
 FROM `bigquery-public-data.austin_311.311_service_requests`
 WHERE (created_date >= '{0}') AND (created_date < '{1}');

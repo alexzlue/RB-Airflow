@@ -10,5 +10,6 @@ CREATE TABLE IF NOT EXISTS airflow.austin_service_reports (
     created_date          timestamp,
     last_update_date      timestamp,
     close_date            timestamp,
+    city                  varchar(50),
     UNIQUE                (unique_key)
 );
