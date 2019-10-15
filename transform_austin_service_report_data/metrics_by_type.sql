@@ -8,14 +8,14 @@ SELECT d1.complaint_type,
 FROM
     --  total reports by complaint_type & avg time to complete
     (SELECT complaint_type AS complaint_type,
-            COUNT(*) AS total_reports,
+            COUNT(complaint_type) AS total_reports,
             CAST(AVG(EXTRACT(DAY FROM close_date-created_date)) AS DECIMAL (12,2)) AS average_num_days_open
      FROM airflow.austin_service_reports
      GROUP BY complaint_type) d1
 FULL JOIN
     -- total reports still opened 
     (SELECT complaint_type AS complaint_type,
-            COUNT(*) AS reports_active
+            COUNT(complaint_type) AS reports_active
      FROM airflow.austin_service_reports
      WHERE close_date IS NULL
      GROUP BY complaint_type) d2
@@ -23,7 +23,7 @@ ON (d1.complaint_type=d2.complaint_type)
 FULL JOIN
     -- total reports closed
     (SELECT complaint_type AS complaint_type,
-            COUNT(*) AS reports_closed
+            COUNT(complaint_type) AS reports_closed
      FROM airflow.austin_service_reports
      WHERE close_date IS NOT NULL
      GROUP BY complaint_type) d3
@@ -31,7 +31,7 @@ ON (d1.complaint_type=d3.complaint_type)
 FULL JOIN
     -- total reports never opened
     (SELECT complaint_type AS complaint_type,
-            COUNT(*) AS reports_never_opened
+            COUNT(complaint_type) AS reports_never_opened
      FROM airflow.austin_service_reports
      WHERE created_date=last_update_date AND close_date is NULL
      GROUP BY complaint_type) d4

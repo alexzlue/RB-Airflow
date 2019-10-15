@@ -8,14 +8,14 @@ SELECT d1.date,
 FROM
     -- collects number of reports closed for reports made for each day
     (SELECT CAST(created_date AS DATE) AS date,
-            COUNT(*) AS total_reports,
+            COUNT(created_date) AS total_reports,
             CAST(AVG(EXTRACT(DAY FROM close_date-created_date)) AS DECIMAL (12,2)) AS average_num_days_open
     FROM airflow.austin_service_reports
     GROUP BY date) d1
 FULL JOIN
     -- collects number of reports closed for reports made for each day
     (SELECT CAST(created_date AS DATE) AS date,
-            COUNT(*) AS reports_closed
+            COUNT(created_date) AS reports_closed
     FROM airflow.austin_service_reports
     WHERE close_date IS NOT NULL
     GROUP BY date) d2
@@ -24,7 +24,7 @@ FULL JOIN
     -- collects number of ongoing reports from each day
     -- can be used to calculate % never closed
     (SELECT CAST(created_date AS DATE) AS date,
-            COUNT(*) AS reports_active
+            COUNT(created_date) AS reports_active
     FROM airflow.austin_service_reports
     WHERE close_date is NULL
     GROUP BY date) d3
@@ -32,7 +32,7 @@ ON (d1.date=d3.date)
 FULL JOIN
     -- collects # of reports never opened that were created on each day
     (SELECT CAST(created_date AS DATE) AS date,
-            COUNT(*) AS reports_never_opened
+            COUNT(created_date) AS reports_never_opened
      FROM airflow.austin_service_reports
      WHERE created_date=last_update_date AND close_date is NULL
      GROUP BY date) d4
