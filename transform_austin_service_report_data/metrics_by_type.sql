@@ -1,6 +1,6 @@
 CREATE VIEW airflow.metrics_by_type AS
 SELECT d1.complaint_type, 
-       d1.total_reports AS total_reports,
+       d1.total_reports,
        COALESCE(d2.reports_active,0) AS reports_active,
        COALESCE(d3.reports_closed,0) AS reports_closed,
        COALESCE(d4.reports_never_opened,0) AS reports_never_opened,
