@@ -1,5 +1,7 @@
 from airflow.hooks.postgres_hook import PostgresHook
 
+from datetime import datetime, timedelta
+
 SQL_PATH = 'dags/transfer_data_pipeline/sql/'
 
 def average_days_open(**kwargs):
@@ -10,24 +12,37 @@ def average_days_open(**kwargs):
 
     cursor.close()
     conn.close()
-    return int(resp[0])
+    return {'days_open':int(resp[0])}
 
 
-def create_temp_table(**kwargs):
-    day_diff = kwargs['task_instance'].xcom_pull(task_ids='task_calculate_avg_days')
-    with open(SQL_PATH + 'create_temp_table.sql') as f:
-        create = f.read()
+def load_transfer(**kwargs):
+    # Collect days from previous operator with xcom
+    days_open = kwargs['task_instance'].xcom_pull(task_ids='task_calculate_avg_days')['days_open']
     
     conn = PostgresHook(postgres_conn_id='my_local_db').get_conn()
     cursor = conn.cursor()
 
-    cursor.execute(create)
+    # Find most recent pull 
+    cursor.execute('SELECT MAX(created_date) FROM airflow.transfer_table')
+    start_date = cursor.fetchone()[0]
+    if not start_date:
+        cursor.execute('SELECT MIN(created_date) FROM airflow.austin_service_reports')
+        start_date = cursor.fetchone()[0]
+    
+    # Remove previous data in transfer table
+    cursor.execute('DELETE FROM airflow.transfer_table')
+    
+    # Calculate end date
+    end_date = datetime.strptime(kwargs['ds'], '%Y-%m-%d').date()-timedelta(days=days_open)
 
-    # Then do a select into the new table from raw data table (from BQ)
+    with open(SQL_PATH + 'insert_into_transfer_table.sql') as f:
+        insert = f.read()
+    insert = insert.format(start_date, end_date)
 
-    # After move onto next DAG step
+    # Insert into the new table from raw data table (from BQ)
+    cursor.execute(insert)
+    conn.commit()
 
     cursor.close()
     conn.close()
-    print(day_diff)
 
