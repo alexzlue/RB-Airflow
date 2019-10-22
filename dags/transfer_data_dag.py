@@ -5,7 +5,7 @@ from airflow.operators.bash_operator import BashOperator
 
 from datetime import datetime, timedelta
 
-from transfer_data_pipeline.py.transfer_data import average_days_open, create_temp_table
+from transfer_data_pipeline.py.transfer_data import average_days_open
 
 
 default_args = {
@@ -27,6 +27,13 @@ dag = DAG(
     max_active_runs=1
 )
 
+task_create_tables = PostgresOperator(
+    task_id='task_create_tables',
+    sql='./transfer_data_pipeline/sql/create_transfer_and_aggregate_tables.sql',
+    postgres_conn_id='my_local_db',
+    dag=dag
+)
+
 task_calculate_avg_days = PythonOperator(
     task_id='task_calculate_avg_days',
     python_callable=average_days_open,
@@ -34,11 +41,4 @@ task_calculate_avg_days = PythonOperator(
     dag=dag
 )
 
-task_create_temp_table = PythonOperator(
-    task_id='task_create_temp_table',
-    python_callable=create_temp_table,
-    provide_context=True,
-    dag=dag
-)
-
-task_calculate_avg_days >> task_create_temp_table
+task_create_tables.set_downstream(task_calculate_avg_days)
