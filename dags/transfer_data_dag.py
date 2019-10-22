@@ -4,7 +4,7 @@ from airflow.operators.postgres_operator import PostgresOperator
 
 from datetime import datetime, timedelta
 
-from transfer_data_pipeline.py.transfer_data import average_days_open, load_transfer
+from transfer_data_pipeline.py.transfer_data import average_days_open, load_transfer, transfer_to_aggregate
 
 
 default_args = {
@@ -47,4 +47,13 @@ task_load_transfer_table = PythonOperator(
     dag=dag
 )
 
+task_transfer_to_aggregate_table = PythonOperator(
+    task_id='task_transfer_to_aggregate_table',
+    python_callable=transfer_to_aggregate,
+    provide_context=True,
+    dag=dag
+)
+
 task_create_tables.set_downstream(task_calculate_avg_days)
+task_calculate_avg_days.set_downstream(task_load_transfer_table)
+task_load_transfer_table.set_downstream(task_transfer_to_aggregate_table)
