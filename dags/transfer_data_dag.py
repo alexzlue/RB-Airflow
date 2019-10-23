@@ -33,6 +33,13 @@ task_create_tables = PostgresOperator(
     dag=dag
 )
 
+task_create_views = PostgresOperator(
+    taks_id='task_create_views',
+    sql='./transfer_data_pipeline/sql/create_views.sql',
+    postgres_conn_id='my_local_db',
+    dag=dag
+)
+
 task_calculate_avg_days = PythonOperator(
     task_id='task_calculate_avg_days',
     python_callable=average_days_open,
@@ -54,6 +61,7 @@ task_transfer_to_aggregate_table = PythonOperator(
     dag=dag
 )
 
-task_create_tables.set_downstream(task_calculate_avg_days)
+task_create_tables.set_downstream(task_create_views)
+task_create_views.set_downstream(task_calculate_avg_days)
 task_calculate_avg_days.set_downstream(task_load_transfer_table)
 task_load_transfer_table.set_downstream(task_transfer_to_aggregate_table)
