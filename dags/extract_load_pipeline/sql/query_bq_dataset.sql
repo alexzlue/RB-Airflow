@@ -10,4 +10,4 @@ SELECT unique_key,
     close_date,
     city
 FROM `bigquery-public-data.austin_311.311_service_requests`
-WHERE (created_date >= '{0}') AND (created_date < '{1}');
+WHERE (last_update_date >= '{0}') AND (last_update_date < '{1}');

@@ -23,11 +23,11 @@ def load_transfer(**kwargs):
     cursor = conn.cursor()
 
     # Find most recent pull 
-    cursor.execute('SELECT MAX(created_date) FROM airflow.transfer_table')
+    cursor.execute('SELECT MAX(last_update_date) FROM airflow.transfer_table')
     start_date = cursor.fetchone()[0]
     if not start_date:
-        cursor.execute('SELECT MIN(created_date) FROM airflow.austin_service_reports')
-        start_date = cursor.fetchone()[0]
+        cursor.execute('SELECT MIN(last_update_date) FROM airflow.austin_service_reports')
+        start_date = cursor.fetchone()[0]+timedelta(seconds=1)
     
     # Remove previous data in transfer table
     cursor.execute('DELETE FROM airflow.transfer_table')

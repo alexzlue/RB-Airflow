@@ -8,8 +8,7 @@ CREATE TABLE IF NOT EXISTS airflow.transfer_table (
     created_date          timestamp,
     last_update_date      timestamp,
     close_date            timestamp,
-    city                  varchar(50),
-    UNIQUE                (unique_key)
+    city                  varchar(50)
 );
 
 CREATE TABLE IF NOT EXISTS airflow.aggregate_table (
@@ -23,5 +22,5 @@ CREATE TABLE IF NOT EXISTS airflow.aggregate_table (
     last_update_date      timestamp,
     close_date            timestamp,
     city                  varchar(50),
-    UNIQUE                (unique_key)
+    PRIMARY KEY           (unique_key)
 );

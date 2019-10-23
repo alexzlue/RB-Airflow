@@ -38,24 +38,20 @@ def load_table(**kwargs):
 
 # collects values based off date range from bigquery and pushes to gcs as csv
 def bq_to_gcs(**kwargs):
-    ds = kwargs['ds']
-    previous = datetime.strptime(kwargs['prev_ds'], '%Y-%m-%d').date()
+    date_stamp = kwargs['ds']
 
     # get the last current date from Postgres
     conn = PostgresHook(postgres_conn_id='my_local_db').get_conn()
     cursor = conn.cursor()
 
-    cursor.execute('SELECT MAX(CAST(created_date AS DATE)) FROM airflow.austin_service_reports;')
+    cursor.execute('SELECT MAX(created_date) FROM airflow.austin_service_reports;')
     
     recent_ds = cursor.fetchone()[0]
     if recent_ds is not None:
-        recent_ds+=timedelta(days=1)
-        if recent_ds < previous:
-            prev_ds = datetime.strftime(recent_ds, '%Y-%m-%d')
-        else:
-            prev_ds = kwargs['prev_ds']
+        recent_ds+=timedelta(seconds=1)
+        last = recent_ds
     else:
-        prev_ds = datetime.strftime(kwargs['start_date']-timedelta(days=1), '%Y-%m-%d')
+        last = kwargs['start_date']-timedelta(days=1)
     
     cursor.close()
     conn.close()
@@ -69,7 +65,7 @@ def bq_to_gcs(**kwargs):
     cursor = conn.cursor()
     with open(SQL_PATH + 'query_bq_dataset.sql', 'r') as f:
         query = f.read()
-        query = query.format(prev_ds,ds)
+    query = query.format(last, date_stamp)
 
     cursor.execute(query)
 
