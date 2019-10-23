@@ -28,7 +28,9 @@ def load_table(**kwargs):
     tempf = NamedTemporaryFile()
     blob.download_to_filename(tempf.name)
 
-    query = "COPY airflow.austin_service_reports FROM '"+tempf.name+"' DELIMITER '|' NULL ''"
+    with open(SQL_PATH + 'load_postgres_table.sql') as f:
+        query = f.read().format(tempf.name)
+
     cursor.execute(query)
 
     tempf.close()
