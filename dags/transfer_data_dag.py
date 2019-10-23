@@ -34,7 +34,7 @@ task_create_tables = PostgresOperator(
 )
 
 task_create_views = PostgresOperator(
-    taks_id='task_create_views',
+    task_id='task_create_views',
     sql='./transfer_data_pipeline/sql/create_views.sql',
     postgres_conn_id='my_local_db',
     dag=dag

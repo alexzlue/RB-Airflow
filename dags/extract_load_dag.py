@@ -54,7 +54,7 @@ task_gcs_to_postgres = PythonOperator(
 )
 
 task_trigger_transform = TriggerDagRunOperator(
-    task_id='task_trigger_transform',
+    task_id='task_trigger_transfer',
     trigger_dag_id='transfer_data',
     dag=dag
 )
