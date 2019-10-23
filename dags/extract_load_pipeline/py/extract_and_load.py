@@ -44,7 +44,7 @@ def bq_to_gcs(**kwargs):
     conn = PostgresHook(postgres_conn_id='my_local_db').get_conn()
     cursor = conn.cursor()
 
-    cursor.execute('SELECT MAX(created_date) FROM airflow.austin_service_reports;')
+    cursor.execute('SELECT MAX(last_update_date) FROM airflow.austin_service_reports;')
     
     recent_ds = cursor.fetchone()[0]
     if recent_ds is not None:
