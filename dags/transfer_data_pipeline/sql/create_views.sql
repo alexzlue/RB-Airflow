@@ -1,5 +1,5 @@
 -- metrics by city
-CREATE VIEW airflow.metrics_by_city AS
+CREATE OR REPLACE VIEW airflow.metrics_by_city AS
 SELECT COALESCE(d1.city,'NULL') AS city, 
        d1.total_reports,
        COALESCE(d2.reports_active,0) AS reports_active,
@@ -41,7 +41,7 @@ ORDER BY d1.city;
 
 
 -- metrics by day
-CREATE VIEW airflow.metrics_by_day AS
+CREATE OR REPLACE VIEW airflow.metrics_by_day AS
 SELECT d1.date,
        d1.total_reports,
        COALESCE(d3.reports_active,0) AS reports_active, 
@@ -84,7 +84,7 @@ ORDER BY d1.date;
 
 
 -- metrics by department
-CREATE VIEW airflow.metrics_by_department AS
+CREATE OR REPLACE VIEW airflow.metrics_by_department AS
 SELECT d1.department, 
        d1.total_reports,
        COALESCE(d2.reports_active,0) AS reports_active,
@@ -126,7 +126,7 @@ ORDER BY d1.department;
 
 
 -- metrics by source
-CREATE VIEW airflow.metrics_by_source AS
+CREATE OR REPLACE VIEW airflow.metrics_by_source AS
 SELECT CASE 
             WHEN d1.source='Phone' THEN 'Phone'
             WHEN d1.source='Spot311 Interface' THEN 'Spot311 Interface'
@@ -173,7 +173,7 @@ ORDER BY report_source DESC;
 
 
 -- metrics by type
-CREATE VIEW airflow.metrics_by_type AS
+CREATE OR REPLACE VIEW airflow.metrics_by_type AS
 SELECT d1.complaint_type, 
        d1.total_reports,
        COALESCE(d2.reports_active,0) AS reports_active,
