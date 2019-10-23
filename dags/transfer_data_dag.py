@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 
 from transfer_data_pipeline.py.transfer_data import average_days_open, load_transfer, transfer_to_aggregate
 
+SQL_PATH = './transfer_data_pipeline/sql/'
 
 default_args = {
     'owner': 'airflow',
@@ -28,14 +29,14 @@ dag = DAG(
 
 task_create_tables = PostgresOperator(
     task_id='task_create_tables',
-    sql='./transfer_data_pipeline/sql/create_transfer_and_aggregate_tables.sql',
+    sql=SQL_PATH + 'create_transfer_and_aggregate_tables.sql',
     postgres_conn_id='my_local_db',
     dag=dag
 )
 
 task_create_views = PostgresOperator(
     task_id='task_create_views',
-    sql='./transfer_data_pipeline/sql/create_views.sql',
+    sql=SQL_PATH + 'create_views.sql',
     postgres_conn_id='my_local_db',
     dag=dag
 )
