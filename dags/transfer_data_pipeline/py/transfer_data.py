@@ -29,18 +29,14 @@ def load_transfer(**kwargs):
         cursor.execute('SELECT MIN(last_update_date) FROM airflow.austin_service_reports')
         start_date = cursor.fetchone()[0]+timedelta(seconds=1)
     
-    # Remove previous data in transfer table
-    cursor.execute('DELETE FROM airflow.transfer_table')
-    
-    # Calculate end date
     end_date = datetime.strptime(kwargs['ds'], '%Y-%m-%d').date()-timedelta(days=days_open)
 
-    with open(SQL_PATH + 'insert_into_transfer_table.sql') as f:
-        insert = f.read()
-    insert = insert.format(start_date, end_date)
-    # print(insert)
+    # Remove previous data in transfer table
+    cursor.execute('DELETE FROM airflow.transfer_table')
 
-    # Insert into the new table from raw data table (from BQ)
+    with open(SQL_PATH + 'insert_into_transfer_table.sql') as f:
+        insert = f.read().format(start_date, end_date)
+
     cursor.execute(insert)
     conn.commit()
 
