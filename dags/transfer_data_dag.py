@@ -4,7 +4,7 @@ from airflow.operators.postgres_operator import PostgresOperator
 
 from datetime import datetime, timedelta
 
-from transfer_data_pipeline.py.transfer_data import average_days_open, load_transfer, transfer_to_aggregate
+from transfer_data_pipeline.py.transfer_data import average_days_open, load_transfer
 
 SQL_PATH = './transfer_data_pipeline/sql/'
 
@@ -55,10 +55,10 @@ task_load_transfer_table = PythonOperator(
     dag=dag
 )
 
-task_transfer_to_aggregate_table = PythonOperator(
+task_transfer_to_aggregate_table = PostgresOperator(
     task_id='task_transfer_to_aggregate_table',
-    python_callable=transfer_to_aggregate,
-    provide_context=True,
+    sql=SQL_PATH + 'insert_into_aggregate.sql',
+    postgres_conn_id='my_local_db',
     dag=dag
 )
 

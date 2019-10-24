@@ -42,16 +42,3 @@ def load_transfer(**kwargs):
 
     cursor.close()
     conn.close()
-
-def transfer_to_aggregate(**kwargs):
-    with open(SQL_PATH + 'insert_into_aggregate.sql') as f:
-        insert = f.read()
-    
-    conn = PostgresHook(postgres_conn_id='my_local_db').get_conn()
-    cursor = conn.cursor()
-
-    cursor.execute(insert)
-
-    conn.commit()
-    cursor.close()
-    conn.close()
