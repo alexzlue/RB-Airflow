@@ -15,29 +15,6 @@ PROJECT = gcs_client.Project('airy-media-254122', CRED)
 BUCKET = PROJECT.list()[0]
 SQL_PATH = 'dags/extract_load_pipeline/sql/'
 
-# loads postgres table, creates a table if it does not exist
-def load_table(**kwargs):
-    conn = PostgresHook(postgres_conn_id='my_local_db').get_conn()
-    cursor = conn.cursor()
-
-    client = storage.Client()
-    bucket = client.get_bucket('airy-media-254122.appspot.com')
-    blob = bucket.get_blob('bq_bucket/bq_dataset.txt')
-
-    # create a temporary file and store csv into that to read
-    tempf = NamedTemporaryFile()
-    blob.download_to_filename(tempf.name)
-
-    with open(SQL_PATH + 'load_postgres_table.sql') as f:
-        query = f.read().format(tempf.name)
-
-    cursor.execute(query)
-
-    tempf.close()
-    conn.commit()
-    cursor.close()
-    conn.close()
-
 # collects values based off date range from bigquery and pushes to gcs as csv
 def bq_to_gcs(**kwargs):
     date_stamp = kwargs['ds']
@@ -88,5 +65,28 @@ def bq_to_gcs(**kwargs):
             result[6] = datetime.utcfromtimestamp(result[6])
             f.write('|'.join([str(val) for val in result]) + '\n')
 
+    cursor.close()
+    conn.close()
+
+# loads postgres table, creates a table if it does not exist
+def load_table(**kwargs):
+    conn = PostgresHook(postgres_conn_id='my_local_db').get_conn()
+    cursor = conn.cursor()
+
+    client = storage.Client()
+    bucket = client.get_bucket('airy-media-254122.appspot.com')
+    blob = bucket.get_blob('bq_bucket/bq_dataset.txt')
+
+    # create a temporary file and store csv into that to read
+    tempf = NamedTemporaryFile()
+    blob.download_to_filename(tempf.name)
+
+    with open(SQL_PATH + 'load_postgres_table.sql') as f:
+        query = f.read().format(tempf.name)
+
+    cursor.execute(query)
+
+    tempf.close()
+    conn.commit()
     cursor.close()
     conn.close()
