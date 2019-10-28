@@ -17,7 +17,7 @@ SQL_PATH = 'dags/extract_load_pipeline/sql/'
 
 # collects values based off date range from bigquery and pushes to gcs as csv
 def bq_to_gcs(**kwargs):
-    date_stamp = kwargs['ds']
+    date_stamp = kwargs['ts']
 
     # get the last current date from Postgres
     conn = PostgresHook(postgres_conn_id='my_local_db').get_conn()
@@ -82,7 +82,7 @@ def load_table(**kwargs):
     blob.download_to_filename(tempf.name)
 
     with open(SQL_PATH + 'load_postgres_table.sql') as f:
-        query = f.read().format(tempf.name)
+        query = f.read().format(tempf.name, kwargs['ts'])
 
     cursor.execute(query)
 
