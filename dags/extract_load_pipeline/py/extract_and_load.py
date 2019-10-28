@@ -49,6 +49,9 @@ def bq_to_gcs(**kwargs):
     cursor.execute(query)
 
     # write to gcs bucket
+    # Each returned row of the result gives:
+    # result = [unique_key, complaint_type, complaint_description, owning_department, source,
+    #           status, created_date, last_update_date, close_date, city]
     with BUCKET.open('bq_bucket/bq_dataset.txt', 'w') as f:
         while True:
             result = cursor.fetchone()
