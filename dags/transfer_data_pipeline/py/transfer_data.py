@@ -18,7 +18,7 @@ def average_days_open():
 def load_transfer(**kwargs):
     # Collect days using function that accesses postgres
     days_open = average_days_open()
-    print(days_open)
+
     conn = PostgresHook(postgres_conn_id='my_local_db').get_conn()
     cursor = conn.cursor()
 
