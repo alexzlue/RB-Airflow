@@ -4,21 +4,21 @@ from datetime import datetime, timedelta
 
 SQL_PATH = 'dags/transfer_data_pipeline/sql/'
 
-def average_days_open(**kwargs):
+def average_days_open():
     conn = PostgresHook(postgres_conn_id='my_local_db').get_conn()
     cursor = conn.cursor()
     cursor.execute('SELECT AVG(average_num_days_open) FROM airflow.metrics_by_day')
-    resp = cursor.fetchone()
+    days_open = cursor.fetchone()
 
     cursor.close()
     conn.close()
-    return {'days_open':int(resp[0])}
+    return int(days_open[0])
 
 
 def load_transfer(**kwargs):
-    # Collect days from previous operator with xcom
-    days_open = kwargs['task_instance'].xcom_pull(task_ids='task_calculate_avg_days')['days_open']
-    
+    # Collect days using function that accesses postgres
+    days_open = average_days_open()
+    print(days_open)
     conn = PostgresHook(postgres_conn_id='my_local_db').get_conn()
     cursor = conn.cursor()
 
