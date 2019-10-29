@@ -1,6 +1,7 @@
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
 from airflow.operators.postgres_operator import PostgresOperator
+from airflow.operators.dagrun_operator import TriggerDagRunOperator
 
 from datetime import datetime, timedelta
 
@@ -52,5 +53,12 @@ task_gcs_to_postgres = PythonOperator(
     dag=dag
 )
 
+task_trigger_transform = TriggerDagRunOperator(
+    task_id='task_trigger_transfer',
+    trigger_dag_id='transfer_data',
+    dag=dag
+)
+
 task_create_table.set_downstream(task_bq_to_gcs)
 task_bq_to_gcs.set_downstream(task_gcs_to_postgres)
+task_gcs_to_postgres.set_downstream(task_trigger_transform)
