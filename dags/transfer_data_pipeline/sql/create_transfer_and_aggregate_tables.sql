@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS airflow.transfer_table (
-    unique_key            char(12),
+    unique_key            char(11),
     complaint_type        varchar(15),
     complaint_description varchar(255),
     owning_department     varchar(255),
@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS airflow.transfer_table (
 );
 
 CREATE TABLE IF NOT EXISTS airflow.aggregate_table (
-    unique_key            char(12),
+    unique_key            char(11),
     complaint_type        varchar(15),
     complaint_description varchar(255),
     owning_department     varchar(255),
