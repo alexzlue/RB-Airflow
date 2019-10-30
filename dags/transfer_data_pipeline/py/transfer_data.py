@@ -27,7 +27,9 @@ def load_transfer(**kwargs):
     start_date = cursor.fetchone()[0]
     if not start_date:
         cursor.execute('SELECT MIN(last_update_date) FROM airflow.austin_service_reports')
-        start_date = cursor.fetchone()[0]+timedelta(seconds=1)
+        start_date = cursor.fetchone()[0]
+    else:
+        start_date+=timedelta(seconds=1)
     
     end_date = datetime.strptime(kwargs['ds'], '%Y-%m-%d').date()-timedelta(days=days_open)
 
