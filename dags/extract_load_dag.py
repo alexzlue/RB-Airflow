@@ -2,6 +2,7 @@ from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
 from airflow.operators.postgres_operator import PostgresOperator
 from airflow.operators.dagrun_operator import TriggerDagRunOperator
+from airflow.sensors import CheckDBSensor
 
 from datetime import datetime, timedelta
 
@@ -53,6 +54,13 @@ task_gcs_to_postgres = PythonOperator(
     dag=dag
 )
 
+task_check_db = CheckDBSensor(
+    task_id='task_check_db',
+    pg_conn_id='my_local_db',
+    bq_conn_id='my_gcp_connection',
+    dag=dag
+)
+
 task_trigger_transform = TriggerDagRunOperator(
     task_id='task_trigger_transfer',
     trigger_dag_id='transfer_data',
@@ -61,4 +69,5 @@ task_trigger_transform = TriggerDagRunOperator(
 
 task_create_table.set_downstream(task_bq_to_gcs)
 task_bq_to_gcs.set_downstream(task_gcs_to_postgres)
-task_gcs_to_postgres.set_downstream(task_trigger_transform)
+task_gcs_to_postgres.set_downstream(task_check_db)
+task_check_db.set_downstream(task_trigger_transform)
