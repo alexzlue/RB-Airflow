@@ -2,7 +2,7 @@ from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
 from airflow.operators.postgres_operator import PostgresOperator
 from airflow.operators.dagrun_operator import TriggerDagRunOperator
-from airflow.sensors import CheckDBSensor
+from airflow.sensors import CheckDBSensor, CheckGCSFileSensor
 
 from datetime import datetime, timedelta
 
@@ -46,6 +46,11 @@ task_bq_to_gcs = PythonOperator(
     dag=dag
 )
 
+task_check_gcs_file = CheckGCSFileSensor(
+    task_id='task_check_gcs_file',
+    dag=dag
+)
+
 # loads postgres table from csv
 task_gcs_to_postgres = PythonOperator(
     task_id='task_gcs_to_postgres',
@@ -68,6 +73,7 @@ task_trigger_transform = TriggerDagRunOperator(
 )
 
 task_create_table.set_downstream(task_bq_to_gcs)
-task_bq_to_gcs.set_downstream(task_gcs_to_postgres)
+task_bq_to_gcs.set_downstream(task_check_gcs_file)
+task_check_gcs_file.set_downstream(task_gcs_to_postgres)
 task_gcs_to_postgres.set_downstream(task_check_db)
 task_check_db.set_downstream(task_trigger_transform)
