@@ -1,6 +1,7 @@
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
 from airflow.operators.postgres_operator import PostgresOperator
+from airflow.sensors import CheckTransferDataSensor
 
 from datetime import datetime, timedelta
 
@@ -48,6 +49,13 @@ task_load_transfer_table = PythonOperator(
     dag=dag
 )
 
+task_check_transfer_data = CheckTransferDataSensor(
+    task_id='task_check_transfer_data',
+    pg_conn_id='my_local_db',
+    bq_conn_id='my_gcp_connection',
+    dag=dag
+)
+
 task_transfer_to_aggregate_table = PostgresOperator(
     task_id='task_transfer_to_aggregate_table',
     sql=SQL_PATH + 'insert_into_aggregate.sql',
@@ -57,4 +65,5 @@ task_transfer_to_aggregate_table = PostgresOperator(
 
 task_create_tables.set_downstream(task_create_views)
 task_create_views.set_downstream(task_load_transfer_table)
-task_load_transfer_table.set_downstream(task_transfer_to_aggregate_table)
+task_load_transfer_table.set_downstream(task_check_transfer_data)
+task_check_transfer_data.set_downstream(task_transfer_to_aggregate_table)
