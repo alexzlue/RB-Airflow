@@ -19,6 +19,10 @@ class CheckTransferDataSensor(BaseSensorOperator):
         min_date = self.pg_hook.get_records('SELECT MIN(last_update_date) FROM airflow.transfer_table;')[0][0]
         max_date = self.pg_hook.get_records('SELECT MAX(last_update_date) FROM airflow.transfer_table;')[0][0]
 
+        # if there is nothing in the transfer table, continue to insert (nothing)
+        if min_date is None or max_date is None:
+            return True
+
         bq_query='''#standardSQL
         SELECT unique_key 
         FROM `bigquery-public-data.austin_311.311_service_requests` 
@@ -27,7 +31,7 @@ class CheckTransferDataSensor(BaseSensorOperator):
         FROM airflow.transfer_table'''
 
         pg_results=self.pg_hook.get_records(pg_query)
-
+        
         key_set = set([item[0] for item in pg_results])
         for record in self.bq_hook.get_records(bq_query.format(min_date, max_date)):
             if record[0] not in key_set:
