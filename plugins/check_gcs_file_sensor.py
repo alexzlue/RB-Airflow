@@ -20,9 +20,13 @@ class CheckGCSFileSensor(BaseSensorOperator):
         super(CheckGCSFileSensor, self).__init__(*args, **kwargs)
     
     def poke(self, context):
+        # check existence & whether it was created for this dag run
         for bucket_object in BUCKET.list():
             if bucket_object.name=='bq_bucket/bq_dataset.txt':
-                return True
+                creation_date = datetime.strptime(bucket_object.timeCreated.split('.')[0],'%Y-%m-%dT%H:%M:%S')
+                exec_date = datetime.strptime(context['ds'], '%Y-%m-%d')
+                if exec_date <= creation_date: 
+                    return True
         return False
         
 
