@@ -2,7 +2,7 @@ from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
 from airflow.operators.postgres_operator import PostgresOperator
 from airflow.operators.dagrun_operator import TriggerDagRunOperator
-from airflow.sensors import CheckDBSensor, CheckGCSFileSensor
+from airflow.sensors import CheckDBSensor, CheckGCSFileSensor, CheckBacklogSensor
 
 from datetime import datetime, timedelta
 
@@ -46,6 +46,7 @@ task_bq_to_gcs = PythonOperator(
     dag=dag
 )
 
+# sensor check to see if gcs file exists
 task_check_gcs_file = CheckGCSFileSensor(
     task_id='task_check_gcs_file',
     dag=dag
@@ -59,6 +60,7 @@ task_gcs_to_postgres = PythonOperator(
     dag=dag
 )
 
+# sensor check to determine data validity
 task_check_db = CheckDBSensor(
     task_id='task_check_db',
     pg_conn_id='my_local_db',
@@ -66,6 +68,14 @@ task_check_db = CheckDBSensor(
     dag=dag
 )
 
+# checks if backlog are only outdated info
+task_check_backlog = CheckBacklogSensor(
+    task_id='task_check_backlog',
+    pg_conn_id='my_local_db',
+    dag=dag
+)
+
+# triggers load to aggregate table
 task_trigger_transform = TriggerDagRunOperator(
     task_id='task_trigger_transfer',
     trigger_dag_id='transfer_data',
@@ -76,4 +86,5 @@ task_create_table.set_downstream(task_bq_to_gcs)
 task_bq_to_gcs.set_downstream(task_check_gcs_file)
 task_check_gcs_file.set_downstream(task_gcs_to_postgres)
 task_gcs_to_postgres.set_downstream(task_check_db)
-task_check_db.set_downstream(task_trigger_transform)
+task_check_db.set_downstream(task_check_backlog)
+task_check_backlog.set_downstream(task_trigger_transform)
