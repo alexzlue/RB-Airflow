@@ -1,5 +1,5 @@
 alembic==1.2.1
-apache-airflow==1.10.5
+apache-airflow==2.1.2
 apispec==3.0.0
 asn1crypto==0.24.0
 astroid==2.3.0
